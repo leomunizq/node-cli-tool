@@ -1,40 +1,18 @@
 #!/usr/bin/env node
-import arg from 'arg'
-import chalk from 'chalk'
-import { readPackageUp } from 'read-package-up'
-
-async function main() {
-  const result = await readPackageUp({ cwd: 'package.json' })
-  return result
-}
+import arg from 'arg';
+import chalk from 'chalk';
+import getConfig from '../src/config/config-mgr.js';
+import start from '../src/commands/start.js';
 
 try {
   const args = arg({
     '--start': Boolean,
-    '--build': Boolean
+    '--build': Boolean,
   });
 
   if (args['--start']) {
-    // Agora esperamos que a promessa seja resolvida antes de continuar.
-    const pkgPath = await main();
-
-    if (!pkgPath) {
-      throw new Error('Could not find package.json');
-    }
-
-    // Atribua packageJson a pkg para acessar seus campos.
-    const pkg = pkgPath.packageJson;
-
-    if (pkg.tool) {
-      console.log('Found configuration', pkg.tool);
-      // TODO: do something with configuration
-    } else {
-      console.log(chalk.yellow('Could not find configuration, using default'));
-      // TODO: get default configuration
-    }
-
-    console.log(chalk.bgMagentaBright(`Starting ${pkg.name} v${pkg.version}`));
-    console.log(chalk.bgCyanBright('starting the app'));
+    const config = await getConfig();
+    start(config);
   }
 } catch (e) {
   console.log(chalk.yellow(e.message));
