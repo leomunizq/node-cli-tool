@@ -12,4 +12,12 @@ try {
   }
 } catch (e) {
   console.log(e.message);
+  console.log();
+  usage();
+}
+
+function usage() {
+  console.log(`tool [CMD]
+  --start\tStarts the app
+  --build\tBuilds the app`);
 }
