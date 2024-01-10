@@ -1,8 +1,12 @@
 import chalk from 'chalk'
-import { cosmiconfigSync, cosmiconfig } from 'cosmiconfig'
-// const pkgUp = require('pkg-up');
+import { cosmiconfigSync } from 'cosmiconfig'
 
 import { readPackageUp } from 'read-package-up'
+import schema from './schema.json' assert { type: 'json' };
+import betterAjvErrors from 'better-ajv-errors'
+import Ajv from 'ajv'
+
+
 
 export async function getPkgFile() {
   const result = await readPackageUp({ cwd: 'package.json' })
@@ -10,7 +14,8 @@ export async function getPkgFile() {
 }
 
 export const getConfig = async () => {
-  const configLoader = cosmiconfigSync('tool')
+  const ajv = new Ajv({ jsonPointers: true });
+  const configLoader = cosmiconfigSync('tool');
   const result = configLoader.search()
 
   const pkgPath = await getPkgFile()
@@ -23,12 +28,18 @@ export const getConfig = async () => {
     console.log(chalk.bgMagentaBright(`Starting ${pkg.name} v${pkg.version}`))
   }
 
-  if (result ) {
+  if (result) {
+    const isValid = ajv.validate(schema, result.config);
+    if (!isValid) {
+      console.log(chalk.bgRedBright('Invalid configuration'))
+      // console.log()
+      console.log(betterAjvErrors(schema, result.config, ajv.errors));
+      process.exit(1);
+    }
     console.log('Found configuration', result.config)
-    console.log(chalk.bgCyanBright('starting the app'))
     return result.config
   }
-  if (!result ) {
+  if (!result) {
     console.log(chalk.yellow('Could not find configuration, using default'))
     return { port: 1234 }
   }
