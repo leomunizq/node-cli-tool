@@ -1,12 +1,11 @@
 import chalk from 'chalk'
+import createLogger from '../logger.js'
 import { cosmiconfigSync } from 'cosmiconfig'
 
 import { readPackageUp } from 'read-package-up'
-import schema from './schema.json' assert { type: 'json' };
+import schema from './schema.json' assert { type: 'json' }
 import betterAjvErrors from 'better-ajv-errors'
 import Ajv from 'ajv'
-
-
 
 export async function getPkgFile() {
   const result = await readPackageUp({ cwd: 'package.json' })
@@ -14,8 +13,9 @@ export async function getPkgFile() {
 }
 
 export const getConfig = async () => {
-  const ajv = new Ajv({ jsonPointers: true });
-  const configLoader = cosmiconfigSync('tool');
+  const logger = createLogger('config-mgr')
+  const ajv = new Ajv({ allErrors: true})
+  const configLoader = cosmiconfigSync('tool')
   const result = configLoader.search()
 
   const pkgPath = await getPkgFile()
@@ -29,18 +29,18 @@ export const getConfig = async () => {
   }
 
   if (result) {
-    const isValid = ajv.validate(schema, result.config);
+    const isValid = ajv.validate(schema, result.config)
     if (!isValid) {
-      console.log(chalk.bgRedBright('Invalid configuration'))
+      logger.warning('Invalid configuration was supplied')
       // console.log()
-      console.log(betterAjvErrors(schema, result.config, ajv.errors));
-      process.exit(1);
+      console.log(betterAjvErrors(schema, result.config, ajv.errors))
+      process.exit(1)
     }
-    console.log('Found configuration', result.config)
+    logger.debug('Found configuration', result.config)
     return result.config
   }
   if (!result) {
-    console.log(chalk.yellow('Could not find configuration, using default'))
+    logger.warning('Could not find configuration, using default')
     return { port: 1234 }
   }
 }
